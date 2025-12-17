@@ -124,28 +124,146 @@
             color: #999;
         }
 
+        .multi-select-section {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        .multi-select-header {
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .multi-select-header h3 {
+            font-weight: normal;
+            font-size: 1.1rem;
+        }
+
+        .multi-select-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .multi-select-controls button {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-family: inherit;
+            background: #555;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .multi-select-controls button:hover {
+            background: #777;
+        }
+
+        .multi-select-controls input[type="number"] {
+            width: 60px;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            font-family: inherit;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .selected-poems {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            min-height: 40px;
+            align-items: center;
+        }
+
+        .selected-tag {
+            background: #e0e0e0;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .selected-tag .remove-tag {
+            cursor: pointer;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .selected-tag .remove-tag:hover {
+            color: #c00;
+        }
+
+        .no-selection {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
         /* Print styles */
         @media print {
             body {
                 background: #fff;
-                padding: 1cm;
+                padding: 0.5cm;
             }
 
             header,
             .controls,
             .faal-number,
-            .print-btn {
+            .print-btn,
+            .multi-select-section {
                 display: none !important;
             }
 
             .poem {
                 box-shadow: none;
                 padding: 0;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .poem-container {
+                page-break-after: always;
+                break-after: page;
+            }
+
+            .poem-container:last-child {
+                page-break-after: auto;
+                break-after: auto;
             }
 
             .beyt {
-                gap: 3rem;
-                margin-bottom: 0.75rem;
+                gap: 2rem;
+                margin-bottom: 0.4rem;
+                line-height: 1.6;
+            }
+
+            .misra {
+                font-size: 11pt;
+            }
+
+            .poem img {
+                width: 60px !important;
+                height: 60px !important;
+            }
+
+            .poem img[alt="faal"]:first-of-type {
+                width: 80px !important;
+                height: 80px !important;
             }
         }
     </style>
@@ -163,7 +281,23 @@
                 <input type="number" id="faalNumber" min="1" max="495" value="1">
             </label>
             <button id="selectBtn">انتخاب</button>
+            <button id="addToListBtn">افزودن به لیست</button>
             <button id="printBtn" class="print-btn">چاپ</button>
+        </div>
+
+        <div class="multi-select-section">
+            <div class="multi-select-header">
+                <h3>چاپ چندتایی</h3>
+                <div class="multi-select-controls">
+                    <input type="number" id="randomCount" min="1" max="20" value="3" title="تعداد فال تصادفی">
+                    <button id="addRandomBtn">افزودن تصادفی</button>
+                    <button id="clearListBtn">پاک کردن لیست</button>
+                    <button id="printMultiBtn" class="print-btn">چاپ همه</button>
+                </div>
+            </div>
+            <div class="selected-poems" id="selectedPoems">
+                <span class="no-selection">هیچ فالی انتخاب نشده است</span>
+            </div>
         </div>
 
         <div id="content">
@@ -174,6 +308,7 @@
     <script src="faal-data.js"></script>
     <script>
         let faals = [];
+        let selectedFaals = [];
 
         // Decompress gzip+base64 data
         async function decompressData(base64Data) {
@@ -231,6 +366,120 @@
             document.getElementById('faalNumber').value = index + 1;
         }
 
+        // Render a single poem HTML for multi-print
+        function renderPoemHtml(index) {
+            const poem = faals[index];
+            const beyts = parsePoem(poem);
+            
+            let html = '<div class="poem-container">';
+            html += '<div class="poem">';
+            html += '<div style="text-align: center;"><img src="yalda.png" style="width: 120px; height: 120px;" alt="faal"></div>';
+            html += '<br>';
+            for (const beyt of beyts) {
+                html += `
+                    <div class="beyt">
+                        <div class="misra">${beyt.misra1}</div>
+                        <div class="misra">${beyt.misra2}</div>
+                    </div>
+                `;
+            }
+            html += '<br>';
+            html += '<div style="text-align: center;"><img src="anar.png" style="width: 60px; height: 60px; margin: 0 auto;" alt="faal"></div>';
+            html += '</div>';
+            html += '</div>';
+            return html;
+        }
+
+        // Update selected poems display
+        function updateSelectedDisplay() {
+            const container = document.getElementById('selectedPoems');
+            if (selectedFaals.length === 0) {
+                container.innerHTML = '<span class="no-selection">هیچ فالی انتخاب نشده است</span>';
+                return;
+            }
+            
+            let html = '';
+            for (const index of selectedFaals) {
+                html += `<span class="selected-tag">غزل ${index + 1} <span class="remove-tag" data-index="${index}">×</span></span>`;
+            }
+            container.innerHTML = html;
+            
+            // Add click handlers for remove buttons
+            container.querySelectorAll('.remove-tag').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = parseInt(btn.dataset.index);
+                    selectedFaals = selectedFaals.filter(i => i !== idx);
+                    updateSelectedDisplay();
+                });
+            });
+        }
+
+        // Add current faal to selection
+        function addToSelection() {
+            const num = parseInt(document.getElementById('faalNumber').value);
+            if (num >= 1 && num <= faals.length) {
+                const index = num - 1;
+                if (!selectedFaals.includes(index)) {
+                    selectedFaals.push(index);
+                    updateSelectedDisplay();
+                }
+            }
+        }
+
+        // Add random faals to selection
+        function addRandomToSelection() {
+            const count = parseInt(document.getElementById('randomCount').value) || 1;
+            const available = [];
+            for (let i = 0; i < faals.length; i++) {
+                if (!selectedFaals.includes(i)) {
+                    available.push(i);
+                }
+            }
+            
+            // Shuffle and pick
+            for (let i = available.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [available[i], available[j]] = [available[j], available[i]];
+            }
+            
+            const toAdd = available.slice(0, Math.min(count, available.length));
+            selectedFaals.push(...toAdd);
+            updateSelectedDisplay();
+        }
+
+        // Clear selection
+        function clearSelection() {
+            selectedFaals = [];
+            updateSelectedDisplay();
+        }
+
+        // Print multiple faals
+        function printMultiple() {
+            if (selectedFaals.length === 0) {
+                alert('لطفاً حداقل یک فال انتخاب کنید');
+                return;
+            }
+            
+            // Generate HTML for all selected poems
+            let html = '';
+            for (const index of selectedFaals) {
+                html += renderPoemHtml(index);
+            }
+            
+            // Store current content and replace
+            const originalContent = document.getElementById('content').innerHTML;
+            document.getElementById('content').innerHTML = html;
+            
+            // Print
+            window.print();
+            
+            // Restore original content after print dialog closes
+            setTimeout(() => {
+                const currentNum = parseInt(document.getElementById('faalNumber').value);
+                displayFaal(currentNum - 1);
+            }, 100);
+        }
+
         // Get random faal
         function getRandomFaal() {
             const index = Math.floor(Math.random() * faals.length);
@@ -267,6 +516,10 @@
         document.getElementById('faalNumber').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') getFaalByNumber();
         });
+        document.getElementById('addToListBtn').addEventListener('click', addToSelection);
+        document.getElementById('addRandomBtn').addEventListener('click', addRandomToSelection);
+        document.getElementById('clearListBtn').addEventListener('click', clearSelection);
+        document.getElementById('printMultiBtn').addEventListener('click', printMultiple);
 
         init();
     </script>
