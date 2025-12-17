@@ -91,6 +91,27 @@
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            min-height: 70vh;
+        }
+
+        .poem-header {
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .poem-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 1rem 0;
+        }
+
+        .poem-footer {
+            text-align: center;
+            flex-shrink: 0;
         }
 
         .beyt {
@@ -348,9 +369,8 @@
             
             let html = `<div class="faal-number">غزل شماره ${index + 1}</div>`;
             html += '<div class="poem">';
-            // make center
-            html += '<div style="text-align: center;"><img src="yalda.png" style="width: 120px; height: 120px;" alt="faal"></div>';
-            html += '<br>';
+            html += '<div class="poem-header"><img src="yalda.png" style="width: 120px; height: 120px;" alt="faal"></div>';
+            html += '<div class="poem-content">';
             for (const beyt of beyts) {
                 html += `
                     <div class="beyt">
@@ -359,8 +379,8 @@
                     </div>
                 `;
             }
-            html += '<br>';
-            html += '<div style="text-align: center;"><img src="anar.png" style="width: 60px; height: 60px; margin: 0 auto;" alt="faal"></div>';
+            html += '</div>';
+            html += '<div class="poem-footer"><img src="anar.png" style="width: 60px; height: 60px;" alt="faal"></div>';
             html += '</div>';
             document.getElementById('content').innerHTML = html;
             document.getElementById('faalNumber').value = index + 1;
@@ -373,8 +393,8 @@
             
             let html = '<div class="poem-container">';
             html += '<div class="poem">';
-            html += '<div style="text-align: center;"><img src="yalda.png" style="width: 120px; height: 120px;" alt="faal"></div>';
-            html += '<br>';
+            html += '<div class="poem-header"><img src="yalda.png" style="width: 120px; height: 120px;" alt="faal"></div>';
+            html += '<div class="poem-content">';
             for (const beyt of beyts) {
                 html += `
                     <div class="beyt">
@@ -383,8 +403,8 @@
                     </div>
                 `;
             }
-            html += '<br>';
-            html += '<div style="text-align: center;"><img src="anar.png" style="width: 60px; height: 60px; margin: 0 auto;" alt="faal"></div>';
+            html += '</div>';
+            html += '<div class="poem-footer"><img src="anar.png" style="width: 60px; height: 60px;" alt="faal"></div>';
             html += '</div>';
             html += '</div>';
             return html;
