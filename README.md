@@ -17,6 +17,8 @@
   - https://ghodsizadeh.github.io/faalhafez/
 - اجرای محلی (اختیاری): فایل `index.html` را در مرورگر باز کنید.
 
+نکته: برای بارگذاری سریع‌تر، داده‌ها در `faal-data.js` به صورت `gzip + base64` فشرده شده‌اند و در مرورگر باز می‌شوند (پیچیده‌ترین بخش کار!).
+
 ### منبع داده‌ها و قدردانی
 
 داده‌های فال (غزل‌ها) از مخزن زیر تهیه شده است:
@@ -43,6 +45,8 @@ The main goal of this project is to print multiple files. These days it is easie
 - Online version:
   - https://ghodsizadeh.github.io/faalhafez/
 - Local (optional): open `index.html` in your browser.
+
+Note: For faster loading, the data is stored in `faal-data.js` as `gzip + base64` and decompressed in the browser (the most complex part!).
 
 ### Data source & credits
 
