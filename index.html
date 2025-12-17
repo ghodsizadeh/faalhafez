@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فال حافظ</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Vazirmatn', 'B Nazanin', 'Tahoma', sans-serif;
+            background: #fafafa;
+            color: #333;
+            line-height: 2;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: normal;
+            margin-bottom: 0.5rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .controls button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-family: inherit;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .controls button:hover {
+            background: #555;
+        }
+
+        .controls input[type="number"] {
+            width: 80px;
+            padding: 0.75rem;
+            font-size: 1rem;
+            font-family: inherit;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .controls label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .faal-number {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .poem {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .beyt {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .misra {
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .misra:first-child {
+            text-align: left;
+        }
+
+        .misra:last-child {
+            text-align: right;
+        }
+
+        .print-btn {
+            background: #666 !important;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: #fff;
+                padding: 1cm;
+            }
+
+            header,
+            .controls,
+            .faal-number,
+            .print-btn {
+                display: none !important;
+            }
+
+            .poem {
+                box-shadow: none;
+                padding: 0;
+            }
+
+            .beyt {
+                gap: 3rem;
+                margin-bottom: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>فال حافظ</h1>
+        </header>
+
+        <div class="controls">
+            <button id="randomBtn">فال تصادفی</button>
+            <label>
+                <span>شماره غزل:</span>
+                <input type="number" id="faalNumber" min="1" max="495" value="1">
+            </label>
+            <button id="selectBtn">انتخاب</button>
+            <button id="printBtn" class="print-btn">چاپ</button>
+        </div>
+
+        <div id="content">
+            <div class="loading">در حال بارگذاری...</div>
+        </div>
+    </div>
+
+    <script src="faal-data.js"></script>
+    <script>
+        let faals = [];
+
+        // Decompress gzip+base64 data
+        async function decompressData(base64Data) {
+            const binaryString = atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            
+            const ds = new DecompressionStream('gzip');
+            const decompressedStream = new Blob([bytes]).stream().pipeThrough(ds);
+            const decompressedBlob = await new Response(decompressedStream).blob();
+            const text = await decompressedBlob.text();
+            return JSON.parse(text);
+        }
+
+        // Parse poem into beyts (each beyt has two misras)
+        function parsePoem(poem) {
+            const lines = poem.split('\n');
+            const beyts = [];
+            
+            for (let i = 0; i < lines.length; i += 2) {
+                const misra1 = lines[i] || '';
+                const misra2 = lines[i + 1] || '';
+                if (misra1 || misra2) {
+                    beyts.push({ misra1, misra2 });
+                }
+            }
+            
+            return beyts;
+        }
+
+        // Display a faal
+        function displayFaal(index) {
+            const poem = faals[index];
+            const beyts = parsePoem(poem);
+            
+            let html = `<div class="faal-number">غزل شماره ${index + 1}</div>`;
+            html += '<div class="poem">';
+            // make center
+            html += '<div style="text-align: center;"><img src="yalda.png" style="width: 120px; height: 120px;" alt="faal"></div>';
+            html += '<br>';
+            for (const beyt of beyts) {
+                html += `
+                    <div class="beyt">
+                        <div class="misra">${beyt.misra1}</div>
+                        <div class="misra">${beyt.misra2}</div>
+                    </div>
+                `;
+            }
+            html += '<br>';
+            html += '<div style="text-align: center;"><img src="anar.png" style="width: 60px; height: 60px; margin: 0 auto;" alt="faal"></div>';
+            html += '</div>';
+            document.getElementById('content').innerHTML = html;
+            document.getElementById('faalNumber').value = index + 1;
+        }
+
+        // Get random faal
+        function getRandomFaal() {
+            const index = Math.floor(Math.random() * faals.length);
+            displayFaal(index);
+        }
+
+        // Get faal by number
+        function getFaalByNumber() {
+            const num = parseInt(document.getElementById('faalNumber').value);
+            if (num >= 1 && num <= faals.length) {
+                displayFaal(num - 1);
+            } else {
+                alert(`لطفاً عددی بین ۱ تا ${faals.length} وارد کنید`);
+            }
+        }
+
+        // Initialize
+        async function init() {
+            try {
+                faals = await decompressData(FAAL_DATA_COMPRESSED);
+                document.getElementById('faalNumber').max = faals.length;
+                getRandomFaal();
+            } catch (error) {
+                document.getElementById('content').innerHTML = 
+                    '<div class="loading">خطا در بارگذاری داده‌ها</div>';
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('randomBtn').addEventListener('click', getRandomFaal);
+        document.getElementById('selectBtn').addEventListener('click', getFaalByNumber);
+        document.getElementById('printBtn').addEventListener('click', () => window.print());
+        document.getElementById('faalNumber').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') getFaalByNumber();
+        });
+
+        init();
+    </script>
+</body>
+</html>
